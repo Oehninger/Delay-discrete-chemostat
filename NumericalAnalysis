@@ -1,0 +1,407 @@
+Dm=1 #Minimum doubling time in days
+r=8  #number of size classes 
+M=2^(1/r)
+I1=Dm/(r) #Maximum iteration time according to Dm and r
+
+#Constraint  m (M-1)^{-1}\leq 1
+(2^(I1/(Dm))-1)/0.7
+#Constraint  rT\leq D_m
+log(2)/(r*0.7)
+#Parameters 
+It=0.001
+p=1/It #period
+m=0.7*It # f_sup
+E= 0.4*It # Dilution rate
+K=1 #  Half-saturation constant
+t <- seq(from=0,to=18000,by=1) #Simulation length
+dk=c(300,400,500,600,700,800,900) # Delays
+##substrate input 
+Inp<- numeric(length(t)) 
+for (h in seq_len(length(t))) {
+  Inp[h] <- 260+70*sin(2*pi*h/p)
+}
+# Critic Value:
+acri=E/(1-E)
+acri
+a=0.00040006762277
+#a=0.0003
+#a=0.000003
+
+##Y^a function
+Ya<- numeric(17000) 
+for (h in seq_len(length(t))) {
+  Sum=0
+  for(j in h:(h+p-1)){
+    Sum=E*Inp[j]*((1-E)*(1+a))^(h+p-1-j)
+    Ya[h] <- 1/(1-((1-E)*(1+a))^(p))*Sum
+  }
+}
+#Ya
+Ya[245:255]
+
+Umbral=K/m
+Umbral
+
+#f'(0)=m/K
+fprima<- numeric(5000) 
+for (h in seq_len(5000)) {
+  fprima[h] <- K/m
+}
+
+tm=t*It #Time
+
+library(ggplot2)
+library(reshape2)
+library(latex2exp)
+library(gridExtra)
+
+######### Begin Graphics of Y^{A} building cicle   
+A<-c(0.00040002,0.00040003,0.00040004,0.00040005,0.00040006762277)
+
+YA <- matrix(0,nrow=6000, ncol=length(A))
+
+for (i in seq_len(length(A))){
+  a=A[i]
+  for (h in seq_len(6000)) {
+    Sum=0
+    for(j in h:(h+p-1)){
+      Sum=E*Inp[j]*((1-E)*(1+a))^(h+p-1-j)
+      YA[h,i] <- 1/(1-((1-E)*(1+a))^(p))*Sum
+    }
+  }
+}
+YA
+
+#Building a matrix with the numerical simulation
+MYa1<-cbind(tm[1:5001],YA[1:5001,1:1])
+MYa2<-cbind(tm[1:5001],YA[1:5001,2:2])
+MYa3<-cbind(tm[1:5001],YA[1:5001,3:3])
+MYa4<-cbind(tm[1:5001],YA[1:5001,4:4])
+MYa5<-cbind(tm[1:5001],YA[1:5001,5:5])
+Mf<-cbind(tm[1:5001],fprima[1:5001])
+
+#Generating plots
+library(ggplot2)
+library(latex2exp)
+library(reshape2)
+
+outdfYa1=data.frame(MYa1)
+outdfYa2=data.frame(MYa2)
+outdfYa3=data.frame(MYa3)
+outdfYa4=data.frame(MYa4)
+outdfYa5=data.frame(MYa5)
+outdff=data.frame(Mf)
+
+names(outdfYa1)=c("Time","Dynamics")
+names(outdfYa2)=c("Time","Dynamics")
+names(outdfYa3)=c("Time","Dynamics")
+names(outdfYa4)=c("Time","Dynamics")
+names(outdfYa5)=c("Time","Dynamics")
+
+names(outdff)=c("Time","Dynamics")
+
+tmppredf=melt(outdfYa1,id.var=c("Time"),variable.name="Variables",value.name="Dynamics")
+tmppred=melt(outdfYa2,id.var=c("Time"),variable.name="Variables",value.name="Dynamics")
+tmppredf=melt(outdfYa3,id.var=c("Time"),variable.name="Variables",value.name="Dynamics")
+tmppred=melt(outdfYa4,id.var=c("Time"),variable.name="Variables",value.name="Dynamics")
+tmppredf=melt(outdfYa5,id.var=c("Time"),variable.name="Variables",value.name="Dynamics")
+
+# Labels
+Lab=c("a=4.0002xe-4","a=4.0003xe-4", "a=4.0004xe-4", "a=4.0005xe-4","a=4.0006762xe-4", "Threshold")
+
+base=ggplot(data=outdfYa1,aes(x=Time,y=Dynamics)) + geom_path(aes(linetype=Lab[1], colour=Lab[1]),size=1.0)#,linetype = 2)
+base=base+geom_path(data=outdfYa2,aes(linetype=Lab[2],colour=Lab[2]),size=1.0)
+base=base+geom_path(data=outdfYa3,aes(linetype=Lab[3],colour=Lab[3]),size=1.0)
+base=base+geom_path(data=outdfYa4,aes(linetype=Lab[4],colour=Lab[4]),size=1.0)
+base=base+geom_path(data=outdfYa5,aes(linetype=Lab[5],colour=Lab[5]),size=1.0)
+base=base+geom_path(data=outdff,aes(linetype=Lab[6],colour=Lab[6]),size=1.0)#,linetype="dashed")#,aes(x=Time,y=Densities)) 
+
+labelled=base+ labs(title = TeX(r"(Solutions of (2.8) for different parameters $a$)"), colour="",linetype="" )+
+  xlab(TeX(r"(Time (d) )")) +
+  ylab(TeX(r"(Densities ($\mu$ Mol $L^{-1}$) )"))
+
+styledYa=labelled+theme_bw()+theme(
+  plot.title = element_text(size=15, hjust = 0.5),
+  axis.text = element_text(size = 10),
+  axis.title = element_text(size = 10)
+)
+
+styledYa
+
+######### End Graphics of Y^{A} building cicle   
+
+######## Testing the Assumptions
+# An approximation  for  a_* is: 0.00040006762277
+
+## Sigma function
+Z<- numeric(length(t)-1) 
+for (h in seq_len(length(t)-1001)) {
+  Sum=0
+  for(j in h:(h+p-1)){
+    Sum=E*Inp[j]*(1-E)^(h+p-1-j)
+    Z[h] <- 1/(1-(1-E)^(p))*Sum
+  }
+}
+Z
+R1=range(Z)
+R2=range(Inp)
+R1[1]
+R2[1]
+# Inequaility (2.8): f'(0)[Z_max-Es^0_min]<a_*
+H1=(m/K)*(R1[2]-E*R2[1])
+H1
+
+
+# Inequaility (2.9):  f'(0)*E*Max[Suma1-Suma2]<a_*
+F1<- matrix(0,nrow=1000, ncol=7)
+F2<- matrix(0,nrow=1000, ncol=7)
+for (m1 in 1:7){
+  for (h in 1:1000) {
+    Sum1=0
+    for(j in h:(p+h-dk[m1]-1)){
+      Sum=Inp[j]
+      F1[h,m1] <- Sum1
+    }
+  }
+  for (h in 1:1000) {
+    Sum2=0
+    for(j in h:(p+h-dk[m1]-2)){
+      Sum2=E*Inp[j]
+      F2[h,m1] <- Sum2
+    }
+  }
+}
+
+F3=F1-F2
+R31=range(F3[,1])
+R32=range(F3[,2])
+R33=range(F3[,3])
+R34=range(F3[,4])
+R35=range(F3[,5])
+R36=range(F3[,6])
+R37=range(F3[,7])
+# Inequality (2.9)
+H2=(m/K)*E*R31[2]
+H2
+
+######### Begin Numerical simulations    
+
+#Arrays for the first simulation
+X <- matrix(0,nrow=length(t)+dk[5], ncol=r)
+U <- numeric(length(t)+dk[5])
+S <- numeric(length(t)+dk[5])
+#Arrays for the second simulation
+X1 <- matrix(0,nrow=length(t)+dk[5], ncol=r)
+U1 <- numeric(length(t)+dk[5])
+S1 <- numeric(length(t)+dk[5])
+
+#Arrays for the third simulation
+X2 <- matrix(0,nrow=length(t)+dk[5], ncol=r)
+U2 <- numeric(length(t)+dk[5])
+S2 <- numeric(length(t)+dk[5])
+
+## Monod Function
+f=function (y, parms) {
+  m*y/(K+y)
+}
+
+## P function
+P=function(y,parms){
+  (1/(M-1))*(m*y/(K+y))  
+}
+
+##Initial conditions for the first simulation
+X[dk[5]+1,4] <- 45
+X[dk[5]+1,5] <- 45
+
+Q=0
+for (j in seq_len(r-1)){
+  Q=Q+X[dk[5]+1,j]
+}
+
+for (j in seq_len(dk[5]+1)){
+  S[j]=50
+  U[j]<-Q
+}
+#Dynamical system (first simulation)
+for (h in seq(from=dk[5]+1,to=length(t)+dk[5]-1,by=1)){
+  X[h+1,1] <- (1-E)*(1-P(S[h-dk[5]]))*X[h,1]+(1-E)*(M)*P(S[h-dk[5]])*X[h,r]
+  for (j in seq(from=2,to=r,by=1)){
+    X[h+1,j] <- (1-E)*(1-P(S[h-dk[5]]))*X[h,j]+(1-E)*(M)*P(S[h-dk[5]])*X[h,j-1]
+  }
+  U[h+1]<-(1-E)*(1+f(S[h-dk[5]]))*U[h] 
+  S[h+1] <- E*Inp[h]+ (1-E)*(S[h]-f(S[h])*U[h])
+}
+
+#Building a matrix with the numerical simulation
+ti <- seq(from=-dk[5],to=18000,by=1)
+tm=ti*It
+
+Ma<-cbind(tm,U,S)
+Mb<-Ma[10001:18001,1:3]
+
+##Initial conditions for the second simulation
+
+
+X1[dk[5]+1,1] <- 10
+X1[dk[5]+1,5] <- 10
+
+Q1=0
+
+for (j in seq_len(r-1)){
+  Q1=Q1+X1[dk[5]+1,j]
+}
+for (j in seq_len(dk[5]+1)){
+  S1[j]=50
+  U1[j]<-Q1
+}
+
+#Dynamical system (second simulation)
+
+for (h in seq(from=dk[5]+1,to=length(t)+dk[5]-1,by=1)){
+  X1[h+1,1] <- (1-E)*(1-P(S1[h-dk[5]]))*X1[h,1]+(1-E)*(M)*P(S1[h-dk[5]])*X1[h,r]
+  for (j in seq(from=2,to=r,by=1)){
+    X1[h+1,j] <- (1-E)*(1-P(S1[h-dk[5]]))*X1[h,j]+(1-E)*(M)*P(S1[h-dk[5]])*X1[h,j-1]
+  }
+  U1[h+1]<-(1-E)*(1+f(S1[h-dk[5]]))*U1[h] 
+  S1[h+1] <- E*Inp[h]+ (1-E)*(S1[h]-f(S1[h])*U1[h])
+}
+
+#Building a matrix with the numerical simulation
+
+Ma1<-cbind(tm,U1,S1)
+Mb1<-Ma1[10001:18001,1:3]
+
+N1 <- matrix(0,nrow=length(t)+dk[5], ncol=r)
+
+for (j in seq(from=1,to=r,by=1)){
+  N1[,j]=X1[,j]*M^{1-j}
+}
+
+##Initial conditions for the third simulation
+X2[dk[5]+1,1] <- 50
+X2[dk[5]+1,5] <- 20
+
+Q2=0
+
+for (j in seq_len(r-1)){
+  Q2=Q2+X2[dk[5]+1,j]
+}
+
+for (j in seq_len(dk[5]+1)){
+  S2[j]=50
+  U2[j]<-Q2
+}
+
+#Dynamical system (third simulation)
+for (h in seq(from=dk[5]+1,to=length(t)+dk[5]-1,by=1)){
+  X2[h+1,1] <- (1-E)*(1-P(S2[h-dk[5]]))*X2[h,1]+(1-E)*(M)*P(S2[h-dk[5]])*X2[h,r]
+  for (j in seq(from=2,to=r,by=1)){
+    X2[h+1,j] <- (1-E)*(1-P(S2[h-dk[5]]))*X2[h,j]+(1-E)*(M)*P(S2[h-dk[5]])*X2[h,j-1]
+  }
+  U2[h+1]<-(1-E)*(1+f(S2[h-dk[5]]))*U2[h] 
+  S2[h+1] <- E*Inp[h]+ (1-E)*(S2[h]-f(S2[h])*U2[h])
+}
+
+#Building a matrix with the numerical simulation
+
+Ma2<-cbind(tm,U2,S2)
+Mb2<-Ma2[10001:18001,1:3]
+
+#Generating plots
+
+outdf=data.frame(Ma)
+outdf1=data.frame(Ma1)
+outdf2=data.frame(Ma2)
+
+outdfb=data.frame(Mb)
+outdfb1=data.frame(Mb1)
+outdfb2=data.frame(Mb2)
+
+names(outdf)=c("Time","Total Biomass", "Substrate")
+names(outdf1)=c("Time","Total Biomass", "Substrate")
+names(outdf2)=c("Time","Total Biomass", "Substrate")
+
+names(outdfb)=c("Time","Total Biomass", "Substrate")
+names(outdfb1)=c("Time","Total Biomass", "Substrate")
+names(outdfb2)=c("Time","Total Biomass", "Substrate")
+
+tmppred=melt(outdf,id.var=c("Time"),variable.name="Variables",value.name="Densities")
+tmppred1=melt(outdf1,id.var=c("Time"),variable.name="Variables",value.name="Densities")
+tmppred2=melt(outdf2,id.var=c("Time"),variable.name="Variables",value.name="Densities")
+
+tmppredb=melt(outdfb,id.var=c("Time"),variable.name="Variables",value.name="Densities")
+tmppredb1=melt(outdfb1,id.var=c("Time"),variable.name="Variables",value.name="Densities")
+tmppredb2=melt(outdfb2,id.var=c("Time"),variable.name="Variables",value.name="Densities")
+
+Lab1=c("1","2","3")
+
+basea=ggplot(data=tmppred,aes(x=Time,y=Densities)) + geom_path(aes(linetype=Lab1[1],colour=Lab1[1]),size=1.0)
+basea=basea+geom_path(data=tmppred1,aes(linetype=Lab1[2],colour=Lab1[2]),size=1.0)#,linetype="dashed")#,aes(x=Time,y=Densities)) 
+basea=basea+geom_path(data=tmppred2,aes(linetype=Lab1[3],colour=Lab1[3]),size=1.0)#,linetype="dotted")#,aes(x=Time,y=Densities)) 
+basea=basea +facet_wrap(~Variables, scales ="free_y", ncol = 1)
+
+labelleda=basea+ labs( colour="",linetype="" )+
+  xlab(TeX(r"(Time (d) )")) +
+  ylab(TeX(r"(Densities ($\mu$ Mol $L^{-1}$) )"))
+
+styleda=labelleda+theme_bw()+theme(
+  plot.title = element_text(size=10, hjust = 0.5),
+  axis.text = element_text(size = 10),
+  axis.title = element_text(size = 10)
+)
+
+styleda
+#######
+baseb=ggplot(data=tmppredb,aes(x=Time,y=Densities)) + geom_path(aes(linetype=Lab1[1],colour=Lab1[1]),size=1.0)
+baseb=baseb+geom_path(data=tmppredb1,aes(linetype=Lab1[2],colour=Lab1[2]),size=1.0)#,linetype="dashed")#,aes(x=Time,y=Densities)) 
+baseb=baseb+geom_path(data=tmppredb2,aes(linetype=Lab1[3],colour=Lab1[3]),size=1.0)#,linetype="dotted")#,aes(x=Time,y=Densities)) 
+baseb=baseb +facet_wrap(~Variables, scales ="free_y", ncol = 1)
+
+labelledb=baseb+ labs( colour="",linetype="" )+
+  xlab(TeX(r"(Time (d) )")) +
+  ylab(TeX(r"(Densities ($\mu$ Mol $L^{-1}$) )"))
+
+styledb=labelledb+theme_bw()+theme(
+  plot.title = element_text(size=10, hjust = 0.5 ),
+  axis.text = element_text(size = 10),
+  axis.title = element_text(size = 10)
+)
+
+styledb
+
+grid.arrange(styleda,styledb,nrow=1)
+
+#Plots 3D
+
+library(plotly)
+
+fig <-plot_ly(z=X1, type ="surface")
+fig <- fig %>% layout(
+  scene= list(xaxis = list(title = "Size Class",
+                           ticktext=c("1","2","3","4","5","6","7","8"),
+                           tickvals = c(0,1,2,3,4,5,6,7)),
+              yaxis = list(title = "Time  (d)",
+                           ticktext=c("3","6","9","12","15","18"),
+                           tickvals = c(3000,6000,9000,12000,15000,18000)
+              ),
+              zaxis = list(title = "Density "))
+) %>%
+  config(mathjax = "cdn")
+
+fig
+
+fig1 <-plot_ly(z=N1, type ="surface")
+fig1 <- fig1 %>% layout(
+  scene= list(xaxis = list(title = "Size Class",
+                           ticktext=c("1","2","3","4","5","6","7","8"),
+                           tickvals = c(0,1,2,3,4,5,6,7)),
+              yaxis = list(title = "Time  (d)",
+                           ticktext=c("3","6","9","12","15","18"),
+                           tickvals = c(3000,6000,9000,12000,15000,18000)
+              ),
+              zaxis = list(title = "Number of cells "))
+) %>%
+  config(mathjax = "cdn")
+
+fig1
