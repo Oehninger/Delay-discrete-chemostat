@@ -1,12 +1,16 @@
 Dm=1 #Minimum doubling time in days
 r=8  #number of size classes 
 M=2^(1/r)
+
 I1=Dm/(r) #Maximum iteration time according to Dm and r
 
 #Constraint  m (M-1)^{-1}\leq 1
 (2^(I1/(Dm))-1)/0.7
+
 #Constraint  rT\leq D_m
 log(2)/(r*0.7)
+
+
 #Parameters 
 It=0.001
 p=1/It #period
@@ -15,14 +19,18 @@ E= 0.4*It # Dilution rate
 K=1 #  Half-saturation constant
 t <- seq(from=0,to=18000,by=1) #Simulation length
 dk=c(300,400,500,600,700,800,900) # Delays
+
+
 ##substrate input 
 Inp<- numeric(length(t)) 
 for (h in seq_len(length(t))) {
   Inp[h] <- 260+70*sin(2*pi*h/p)
 }
+
 # Critic Value:
 acri=E/(1-E)
 acri
+
 a=0.00040006762277
 #a=0.0003
 #a=0.000003
@@ -100,6 +108,7 @@ names(outdfYa5)=c("Time","Dynamics")
 
 names(outdff)=c("Time","Dynamics")
 
+
 tmppredf=melt(outdfYa1,id.var=c("Time"),variable.name="Variables",value.name="Dynamics")
 tmppred=melt(outdfYa2,id.var=c("Time"),variable.name="Variables",value.name="Dynamics")
 tmppredf=melt(outdfYa3,id.var=c("Time"),variable.name="Variables",value.name="Dynamics")
@@ -121,17 +130,20 @@ labelled=base+ labs(title = TeX(r"(Solutions of (2.8) for different parameters $
   ylab(TeX(r"(Densities ($\mu$ Mol $L^{-1}$) )"))
 
 styledYa=labelled+theme_bw()+theme(
+  legend.text = element_text(size=15),
   plot.title = element_text(size=15, hjust = 0.5),
-  axis.text = element_text(size = 10),
-  axis.title = element_text(size = 10)
+  axis.text = element_text(size = 15),
+  axis.title = element_text(size = 15)
 )
 
 styledYa
 
 ######### End Graphics of Y^{A} building cicle   
 
+
 ######## Testing the Assumptions
-# An approximation  for  a_* is: 0.00040006762277
+
+# Una aproximación para a_* es 0.00040006762277
 
 ## Sigma function
 Z<- numeric(length(t)-1) 
@@ -223,6 +235,8 @@ for (j in seq_len(dk[5]+1)){
   S[j]=50
   U[j]<-Q
 }
+
+
 #Dynamical system (first simulation)
 for (h in seq(from=dk[5]+1,to=length(t)+dk[5]-1,by=1)){
   X[h+1,1] <- (1-E)*(1-P(S[h-dk[5]]))*X[h,1]+(1-E)*(M)*P(S[h-dk[5]])*X[h,r]
@@ -255,6 +269,7 @@ for (j in seq_len(dk[5]+1)){
   S1[j]=50
   U1[j]<-Q1
 }
+
 
 #Dynamical system (second simulation)
 
@@ -292,6 +307,8 @@ for (j in seq_len(dk[5]+1)){
   S2[j]=50
   U2[j]<-Q2
 }
+
+
 
 #Dynamical system (third simulation)
 for (h in seq(from=dk[5]+1,to=length(t)+dk[5]-1,by=1)){
@@ -346,9 +363,10 @@ labelleda=basea+ labs( colour="",linetype="" )+
   ylab(TeX(r"(Densities ($\mu$ Mol $L^{-1}$) )"))
 
 styleda=labelleda+theme_bw()+theme(
-  plot.title = element_text(size=10, hjust = 0.5),
-  axis.text = element_text(size = 10),
-  axis.title = element_text(size = 10)
+  legend.text = element_text(size=12),
+  plot.title = element_text(size=12, hjust = 0.5),
+  axis.text = element_text(size = 12),
+  axis.title = element_text(size = 12)
 )
 
 styleda
@@ -363,14 +381,16 @@ labelledb=baseb+ labs( colour="",linetype="" )+
   ylab(TeX(r"(Densities ($\mu$ Mol $L^{-1}$) )"))
 
 styledb=labelledb+theme_bw()+theme(
-  plot.title = element_text(size=10, hjust = 0.5 ),
-  axis.text = element_text(size = 10),
-  axis.title = element_text(size = 10)
+  legend.text = element_text(size=12),
+  plot.title = element_text(size=12, hjust = 0.5 ),
+  axis.text = element_text(size = 12),
+  axis.title = element_text(size = 12)
 )
 
 styledb
 
 grid.arrange(styleda,styledb,nrow=1)
+
 
 #Plots 3D
 
